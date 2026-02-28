@@ -342,7 +342,7 @@ export default function App() {
   const [habits, setHabits] = useState(DEFAULT_HABITS);
   const [log, setLog] = useState({});
   const [colorMode, setColorMode] = useState("light");
-  const [updatedAt, setUpdatedAt] = useState(Date.now());
+  const [updatedAt, setUpdatedAt] = useState(0);
   const [viewMonth, setViewMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(() => {
     const date = new Date();
@@ -361,7 +361,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [syncNotice, setSyncNotice] = useState("");
   const importInputRef = useRef(null);
-  const payloadRef = useRef(buildPayload({ habits: DEFAULT_HABITS, log: {}, colorMode: "light", updatedAt: Date.now() }));
+  const payloadRef = useRef(buildPayload({ habits: DEFAULT_HABITS, log: {}, colorMode: "light", updatedAt: 0 }));
   const signatureRef = useRef("");
   const skipTimestampSyncRef = useRef(false);
   const cloudPushTimerRef = useRef(null);
@@ -388,7 +388,7 @@ export default function App() {
           habits: DEFAULT_HABITS,
           log: {},
           colorMode: "light",
-          updatedAt: getValidUpdatedAt(latestBackupTs, Date.now()),
+          updatedAt: getValidUpdatedAt(latestBackupTs, 0),
         });
 
       setHabits(payload.habits);
@@ -823,7 +823,8 @@ export default function App() {
     });
 
     if (error) {
-      setSyncNotice("Sign-in failed");
+      const detail = error.message ? `Sign-in failed: ${error.message}` : "Sign-in failed";
+      setSyncNotice(detail);
       return;
     }
 
