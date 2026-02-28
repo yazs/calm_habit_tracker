@@ -1,0 +1,861 @@
+:root {
+  color-scheme: light;
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  line-height: 1.35;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  transition: background-color 480ms ease, color 300ms ease;
+}
+
+.app-shell {
+  --bg-start: #f3eee8;
+  --bg-end: #e4ebe6;
+  --surface: rgba(255, 255, 255, 0.7);
+  --text: #2a2f2c;
+  --muted: #677069;
+  --accent: #7f9d87;
+  --accent-soft: #7f9d8780;
+  --line: rgba(49, 55, 52, 0.15);
+  min-height: 100vh;
+  padding: 1.3rem;
+  color: var(--text);
+  background:
+    radial-gradient(1100px circle at 8% 0%, rgba(255, 255, 255, 0.34), transparent 48%),
+    radial-gradient(900px circle at 100% 100%, var(--accent-soft), transparent 52%),
+    linear-gradient(146deg, var(--bg-start), var(--bg-end));
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1.4fr 1fr;
+  transition:
+    background 550ms ease,
+    color 420ms ease;
+}
+
+.tracker-card,
+.calendar-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px -36px rgba(0, 0, 0, 0.45);
+}
+
+.tracker-card {
+  padding: 1.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.top-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}
+
+h1 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.45rem, 3.4vw, 2rem);
+  font-weight: 560;
+  letter-spacing: 0.01em;
+}
+
+.mode-toggle {
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.46rem 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: transform 220ms ease, background-color 240ms ease, border-color 240ms ease;
+}
+
+.mode-toggle:hover {
+  background: color-mix(in oklab, var(--surface), var(--accent) 20%);
+  transform: translateY(-1px);
+}
+
+.backup-toggle {
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.44rem 0.72rem;
+  cursor: pointer;
+  transition: background-color 220ms ease, color 220ms ease, transform 180ms ease;
+}
+
+.backup-toggle:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+  background: color-mix(in oklab, var(--surface), var(--accent) 17%);
+}
+
+.backup-toggle.active {
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--accent), var(--line) 40%);
+}
+
+.mode-icon {
+  display: inline-flex;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.mode-icon svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.mode-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.sun-core,
+.sun-rays line,
+.moon-core {
+  transform-origin: center;
+  transition: transform 420ms ease, opacity 360ms ease, fill 280ms ease, stroke 280ms ease;
+}
+
+.sun-core {
+  fill: var(--accent);
+}
+
+.sun-rays line {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.moon-core {
+  fill: var(--accent);
+  opacity: 0;
+  transform: scale(0.55) rotate(20deg);
+}
+
+.mode-toggle.dark .sun-core {
+  opacity: 0;
+  transform: scale(0.45);
+}
+
+.mode-toggle.dark .sun-rays line {
+  opacity: 0;
+  transform: scale(0.4) rotate(-18deg);
+}
+
+.mode-toggle.dark .moon-core {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+}
+
+.backup-panel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.backup-toolbar {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.backup-toolbar button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.28rem 0.62rem;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, background-color 220ms ease;
+}
+
+.backup-toolbar button:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+  background: color-mix(in oklab, var(--accent), transparent 85%);
+}
+
+.backup-list {
+  display: grid;
+  gap: 0.26rem;
+}
+
+.backup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.79rem;
+}
+
+.backup-row button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.25rem 0.42rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.backup-row button:hover {
+  background: color-mix(in oklab, var(--accent), transparent 86%);
+}
+
+.backup-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.79rem;
+}
+
+.backup-notice {
+  margin: -0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.77rem;
+}
+
+.hero {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: minmax(220px, 0.9fr) 1fr;
+  align-items: center;
+}
+
+.phase-label {
+  margin: 0;
+  text-transform: capitalize;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+}
+
+h2 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.3rem, 2.5vw, 1.75rem);
+  font-weight: 520;
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted);
+}
+
+.day-copy {
+  margin: 0.18rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+.day-nav {
+  margin-top: 0.65rem;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.day-nav button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.3rem 0.62rem;
+  cursor: pointer;
+  transition: background-color 200ms ease, transform 180ms ease, color 220ms ease;
+}
+
+.day-nav button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: color-mix(in oklab, var(--accent), transparent 86%);
+  color: var(--text);
+}
+
+.day-nav button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.constellation {
+  --constellation-energy: var(--ratio, 0);
+  height: 170px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.constellation svg {
+  width: 100%;
+  height: 100%;
+}
+
+.constellation-aura {
+  fill: url(#constellationAura);
+  opacity: calc(0.04 + (var(--constellation-energy) * 0.38));
+  transition: opacity 320ms ease;
+}
+
+.constellation-skeleton {
+  fill: none;
+  stroke: color-mix(in oklab, var(--line), var(--accent) 15%);
+  stroke-width: 0.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 3.6;
+  opacity: 0.62;
+}
+
+.constellation-line {
+  fill: none;
+  stroke: url(#starLine);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 120;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--accent), transparent 45%));
+  animation: drawLine 680ms ease;
+}
+
+.star-group {
+  transform-origin: center;
+  transition: transform 260ms ease;
+}
+
+.star-core {
+  fill: color-mix(in oklab, var(--text), white 20%);
+  opacity: 0.33;
+  transition: opacity 240ms ease, transform 240ms ease, fill 240ms ease;
+}
+
+.star-glow {
+  fill: url(#starGlow);
+  opacity: 0;
+  transition: opacity 280ms ease;
+}
+
+.star-group.active .star-core {
+  fill: var(--accent);
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.star-group.active .star-glow {
+  opacity: 1;
+}
+
+.star-group.active {
+  animation: starPop 360ms ease;
+}
+
+.star-group.newly-active .star-core {
+  animation: bornStar 620ms cubic-bezier(0.21, 0.68, 0.27, 1);
+}
+
+.star-group.newly-active .star-glow {
+  animation: glowBurst 700ms ease-out;
+}
+
+.habits {
+  display: grid;
+  gap: 0.58rem;
+}
+
+.habit-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.habit-chip {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.72rem 0.9rem;
+  background: rgba(255, 255, 255, 0.13);
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.habit-chip:hover {
+  border-color: color-mix(in oklab, var(--accent), var(--line) 52%);
+  transform: translateY(-1px);
+}
+
+.habit-chip[aria-pressed="true"] {
+  background: color-mix(in oklab, var(--accent), transparent 78%);
+  border-color: color-mix(in oklab, var(--accent), var(--line) 42%);
+}
+
+.habit-chip.pulse {
+  animation: tapPulse 500ms ease;
+}
+
+.habit-name {
+  font-size: 0.98rem;
+}
+
+.habit-marker {
+  --habit-color: var(--accent);
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--habit-color), var(--line) 68%);
+  background: transparent;
+  isolation: isolate;
+  overflow: visible;
+  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.habit-chip[aria-pressed="true"] .habit-marker {
+  border-color: transparent;
+  background: var(--habit-color);
+  transform: scale(1.06);
+}
+
+.habit-marker::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--habit-color), transparent 14%);
+  opacity: 0;
+  transform: scale(0.36);
+}
+
+.habit-chip.pulse .habit-marker::after {
+  animation: markerRipple 620ms ease-out;
+}
+
+.habit-actions {
+  display: inline-flex;
+  gap: 0.28rem;
+}
+
+.habit-action {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.34rem 0.45rem;
+  border-radius: 8px;
+  opacity: 0.12;
+  transform: translateX(-2px);
+  transition: opacity 190ms ease, transform 190ms ease, background-color 190ms ease, color 190ms ease;
+}
+
+.habit-row:hover .habit-action,
+.habit-action:focus-visible,
+.habit-row.editing .habit-action {
+  opacity: 0.9;
+  transform: translateX(0);
+}
+
+.habit-action:hover {
+  background: color-mix(in oklab, var(--accent), transparent 85%);
+  color: var(--text);
+}
+
+.habit-action:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.habit-editor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.habit-editor input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  padding: 0.58rem 0.68rem;
+}
+
+.add-habit {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.add-habit input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  padding: 0.6rem 0.75rem;
+}
+
+.add-habit button {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #111;
+  padding: 0.58rem 0.88rem;
+  cursor: pointer;
+  font-weight: 540;
+  transition: transform 180ms ease, opacity 220ms ease;
+}
+
+.add-habit button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.add-habit button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-card {
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.calendar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.calendar-head h2 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 520;
+}
+
+.calendar-head button {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.weekdays span {
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.day-cell {
+  appearance: none;
+  min-height: 64px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  padding: 0.45rem 0.3rem;
+  display: grid;
+  align-content: space-between;
+  justify-items: center;
+  background: color-mix(in oklab, var(--accent), transparent calc(100% - var(--day-fill, 0%)));
+  color: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 220ms ease, transform 180ms ease, border-color 220ms ease;
+}
+
+.day-cell:hover {
+  transform: translateY(-1px);
+}
+
+.day-cell.selected {
+  border-color: color-mix(in oklab, var(--accent), white 8%);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent), transparent 35%) inset;
+}
+
+.day-cell.today {
+  border-color: color-mix(in oklab, var(--accent), var(--line) 25%);
+}
+
+.day-cell.empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.day-number {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.day-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 32px;
+}
+
+.dot {
+  --dot-color: var(--accent);
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line), var(--dot-color) 12%);
+  opacity: 0.5;
+  transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+.dot.active {
+  background: var(--dot-color);
+  opacity: 1;
+  transform: scale(1.14);
+}
+
+.month-quant {
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.7rem;
+}
+
+.quant-title {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.quant-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.quant-row {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.quant-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.quant-track {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line), transparent 10%);
+  overflow: hidden;
+}
+
+.quant-fill {
+  display: block;
+  width: var(--quant-fill, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--accent), white 14%), var(--accent));
+  transition: width 340ms ease;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 20%);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@keyframes tapPulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.012);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes markerRipple {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.36);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.36);
+  }
+}
+
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: 120;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes starPop {
+  0% {
+    transform: scale(0.9);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bornStar {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.35;
+  }
+  52% {
+    transform: scale(1.26);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes glowBurst {
+  0% {
+    opacity: 0.08;
+    transform: scale(0.4);
+  }
+  55% {
+    opacity: 0.95;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 0.85rem;
+    gap: 0.75rem;
+  }
+
+  .tracker-card {
+    padding: 1.15rem;
+    border-radius: 20px;
+  }
+
+  .calendar-card {
+    padding: 0.9rem;
+    border-radius: 20px;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .constellation {
+    height: 140px;
+  }
+
+  .day-cell {
+    min-height: 56px;
+  }
+
+  .habit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-actions {
+    display: none;
+  }
+}
