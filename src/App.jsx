@@ -13,7 +13,8 @@ const STORAGE_KEY = "calm-habit-tracker-v1";
 const BACKUP_KEY = "calm-habit-tracker-backups-v1";
 const BACKUP_LIMIT = 14;
 const CLOUD_SYNC_DEBOUNCE_MS = 650;
-const CLOUD_TABLE = "user_snapshots";
+const CLOUD_TABLE = "public_snapshots";
+const CLOUD_ROW_ID = import.meta.env.VITE_PUBLIC_SYNC_ID || "calm-habit-tracker-public";
 const MIN_HABITS = 3;
 const MAX_HABITS = 7;
 const MAX_HABIT_NAME_LENGTH = 26;
@@ -358,7 +359,6 @@ export default function App() {
   const [freshStarHabitId, setFreshStarHabitId] = useState(null);
   const [editingHabitId, setEditingHabitId] = useState(null);
   const [editHabitName, setEditHabitName] = useState("");
-  const [session, setSession] = useState(null);
   const [syncNotice, setSyncNotice] = useState("");
   const importInputRef = useRef(null);
   const payloadRef = useRef(buildPayload({ habits: DEFAULT_HABITS, log: {}, colorMode: "light", updatedAt: 0 }));
@@ -366,8 +366,7 @@ export default function App() {
   const skipTimestampSyncRef = useRef(false);
   const cloudPushTimerRef = useRef(null);
   const lastPushedUpdatedAtRef = useRef(0);
-  const syncingUserIdRef = useRef(null);
-  const cloudReadyUserIdRef = useRef(null);
+  const cloudReadyRef = useRef(false);
   const cloudPullInFlightRef = useRef(false);
 
   useEffect(() => {
@@ -435,32 +434,6 @@ export default function App() {
     });
   }
 
-  useEffect(() => {
-    if (!isCloudConfigured || !supabase) return undefined;
-
-    let active = true;
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!active) return;
-      if (error) {
-        setSyncNotice("Cloud unavailable, using local mode");
-        return;
-      }
-      setSession(data.session || null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return;
-      setSession(nextSession || null);
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
   useEffect(() => () => {
     if (cloudPushTimerRef.current) {
       window.clearTimeout(cloudPushTimerRef.current);
@@ -487,37 +460,38 @@ export default function App() {
     return true;
   }
 
-  async function fetchCloudPayload(userId) {
-    if (!supabase || !userId) return { payload: null, error: null };
+  async function fetchCloudPayload() {
+    if (!supabase) return { payload: null, error: null };
     const { data, error } = await supabase
       .from(CLOUD_TABLE)
       .select("payload")
-      .eq("user_id", userId)
+      .eq("id", CLOUD_ROW_ID)
       .maybeSingle();
     if (error) return { payload: null, error };
     return { payload: data?.payload || null, error: null };
   }
 
-  async function upsertCloudPayload(userId, payload) {
-    if (!supabase || !userId) return null;
+  async function upsertCloudPayload(payload) {
+    if (!supabase) return null;
     const { error } = await supabase.from(CLOUD_TABLE).upsert(
       {
-        user_id: userId,
+        id: CLOUD_ROW_ID,
         payload,
         version: 1,
       },
-      { onConflict: "user_id" },
+      { onConflict: "id" },
     );
     return error;
   }
 
-  async function syncWithCloudUser(userId) {
-    if (!isHydrated || !supabase || !userId) return;
+  async function syncWithCloud() {
+    if (!isHydrated || !supabase) return;
 
     const localPayload = normalizePayload(payloadRef.current, 0);
-    const { payload: cloudRawPayload, error } = await fetchCloudPayload(userId);
+    const { payload: cloudRawPayload, error } = await fetchCloudPayload();
     if (error) {
       setSyncNotice("Sync failed, saved locally");
+      cloudReadyRef.current = false;
       return;
     }
 
@@ -527,26 +501,29 @@ export default function App() {
     if (winner.source === "cloud" && winner.payload) {
       applyPayloadToState(winner.payload, 0, true);
       setSyncNotice("Cloud sync on");
-      cloudReadyUserIdRef.current = userId;
+      cloudReadyRef.current = true;
       return;
     }
 
     if (winner.source === "local" && winner.payload) {
-      const pushError = await upsertCloudPayload(userId, winner.payload);
+      const pushError = await upsertCloudPayload(winner.payload);
       if (pushError) {
         setSyncNotice("Sync failed, saved locally");
+        cloudReadyRef.current = false;
         return;
       }
       lastPushedUpdatedAtRef.current = winner.payload.updatedAt;
       setSyncNotice("Cloud sync on");
-      cloudReadyUserIdRef.current = userId;
+      cloudReadyRef.current = true;
+      return;
     }
+
+    cloudReadyRef.current = true;
   }
 
   function queueCloudSync(payload) {
-    const userId = session?.user?.id;
-    if (!supabase || !userId) return;
-    if (cloudReadyUserIdRef.current !== userId) return;
+    if (!supabase || !isCloudConfigured) return;
+    if (!cloudReadyRef.current) return;
     if (payload.updatedAt <= lastPushedUpdatedAtRef.current) return;
 
     if (cloudPushTimerRef.current) {
@@ -554,7 +531,7 @@ export default function App() {
     }
 
     cloudPushTimerRef.current = window.setTimeout(async () => {
-      const pushError = await upsertCloudPayload(userId, payload);
+      const pushError = await upsertCloudPayload(payload);
       if (pushError) {
         setSyncNotice("Sync failed, saved locally");
         return;
@@ -565,36 +542,31 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (!isHydrated || !supabase || !session?.user?.id) return;
-
-    const userId = session.user.id;
-    if (syncingUserIdRef.current !== userId) {
-      syncingUserIdRef.current = userId;
-      cloudReadyUserIdRef.current = null;
-      syncWithCloudUser(userId);
+    if (!isHydrated || !supabase || !isCloudConfigured) {
+      cloudReadyRef.current = false;
+      return;
     }
-  }, [isHydrated, session?.user?.id]);
+    cloudReadyRef.current = false;
+    syncWithCloud();
+  }, [isHydrated]);
 
   useEffect(() => {
-    if (session?.user?.id) return;
-    syncingUserIdRef.current = null;
-    cloudReadyUserIdRef.current = null;
+    if (isCloudConfigured) return;
+    cloudReadyRef.current = false;
     lastPushedUpdatedAtRef.current = 0;
     if (cloudPushTimerRef.current) {
       window.clearTimeout(cloudPushTimerRef.current);
       cloudPushTimerRef.current = null;
     }
-  }, [session?.user?.id]);
+  }, [isCloudConfigured]);
 
   useEffect(() => {
-    if (!isHydrated || !supabase || !session?.user?.id) return undefined;
-
-    const userId = session.user.id;
+    if (!isHydrated || !supabase || !isCloudConfigured) return undefined;
     const onFocus = async () => {
       if (cloudPullInFlightRef.current) return;
       cloudPullInFlightRef.current = true;
       try {
-        await syncWithCloudUser(userId);
+        await syncWithCloud();
       } finally {
         cloudPullInFlightRef.current = false;
       }
@@ -602,7 +574,7 @@ export default function App() {
 
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [isHydrated, session?.user?.id]);
+  }, [isHydrated]);
 
   function storeSnapshot(kind = "manual", payloadOverride = null) {
     const payload = payloadOverride || buildPayload({ habits, log, colorMode, updatedAt });
@@ -647,7 +619,7 @@ export default function App() {
       return [createBackupEntry(payload, "auto"), ...prev];
     });
     queueCloudSync(payload);
-  }, [habits, log, colorMode, updatedAt, isHydrated, session?.user?.id]);
+  }, [habits, log, colorMode, updatedAt, isHydrated]);
 
   const now = new Date();
   const todayKey = getDateKey(now);
@@ -807,48 +779,9 @@ export default function App() {
     }
   }
 
-  async function sendMagicLink() {
-    if (!supabase) {
-      setSyncNotice("Cloud not configured, using local mode");
-      return;
-    }
-
-    const email = window.prompt("Enter your email for a sign-in magic link:");
-    const trimmedEmail = email?.trim();
-    if (!trimmedEmail) return;
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: trimmedEmail,
-      options: { emailRedirectTo: window.location.origin },
-    });
-
-    if (error) {
-      const detail = error.message ? `Sign-in failed: ${error.message}` : "Sign-in failed";
-      setSyncNotice(detail);
-      return;
-    }
-
-    setSyncNotice("Magic link sent");
-  }
-
-  async function signOut() {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      setSyncNotice("Sign-out failed");
-      return;
-    }
-    syncingUserIdRef.current = null;
-    setSession(null);
-    setSyncNotice("Signed out, local mode");
-  }
-
   const syncStatusLabel = !isCloudConfigured
     ? "Local mode"
-    : session?.user
-      ? "Cloud sync on"
-      : "Local mode (sign in to sync)";
-  const userShortLabel = session?.user?.email ? session.user.email.split("@")[0] : "Signed in";
+    : "Cloud sync on (public link)";
 
   return (
     <main
@@ -881,22 +814,6 @@ export default function App() {
             >
               Backups
             </button>
-            {isCloudConfigured && (
-              session?.user ? (
-                <>
-                  <span className="auth-pill" title={session.user.email || ""}>
-                    {userShortLabel}
-                  </span>
-                  <button type="button" className="backup-toggle" onClick={signOut}>
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <button type="button" className="backup-toggle" onClick={sendMagicLink}>
-                  Sign in
-                </button>
-              )
-            )}
             <button
               type="button"
               className={`mode-toggle ${colorMode === "dark" ? "dark" : "light"}`}

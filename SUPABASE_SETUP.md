@@ -1,28 +1,26 @@
-# Supabase + Vercel Setup
+# Supabase + Vercel Setup (No Login)
 
 ## 1) Create table and policies
 1. Open your Supabase project.
 2. Go to SQL Editor.
 3. Run `supabase/schema.sql`.
 
-## 2) Enable email magic link auth
-1. In Supabase, go to Authentication -> Providers -> Email.
-2. Enable Email provider and magic link flow.
-3. Add redirect URLs:
-   - `http://localhost:5173`
-   - `https://calm-habit-tracker.vercel.app`
+This creates `public_snapshots` with public `anon` read/write access.
 
-## 3) Configure environment variables
+## 2) Configure environment variables
 Set in local `.env.local`:
 
 ```bash
 VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_key
+VITE_PUBLIC_SYNC_ID=calm-habit-tracker-public
 ```
 
-Set the same in Vercel project settings (Production, Preview, Development).
+`VITE_PUBLIC_SYNC_ID` is optional but recommended. Use the same value in every environment.
 
-## 4) Deploy
+Set the same vars in Vercel project settings (Production, Preview, Development).
+
+## 3) Deploy
 1. Push to GitHub.
 2. Vercel deploys automatically.
-3. Open app, press `Sign in`, and complete magic-link login.
+3. Open the public link. No login is required.
