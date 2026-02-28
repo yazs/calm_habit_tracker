@@ -72,6 +72,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
@@ -252,6 +253,31 @@ h1 {
   margin: -0.3rem 0 0;
   color: var(--muted);
   font-size: 0.77rem;
+}
+
+.auth-pill {
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.42rem 0.68rem;
+  font-size: 0.82rem;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: color-mix(in oklab, var(--surface), transparent 35%);
+}
+
+.sync-status {
+  margin: -0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.sync-notice {
+  margin: -0.7rem 0 0;
+  color: var(--text);
+  font-size: 0.78rem;
 }
 
 .hero {
