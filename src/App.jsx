@@ -5,7 +5,7 @@ import {
   getPayloadSignature,
   getValidUpdatedAt,
   readLocalPayload,
-  resolveNewest,
+  resolveMerged,
   writeLocalPayload,
 } from "./lib/snapshot";
 
@@ -496,28 +496,38 @@ export default function App() {
     }
 
     const cloudPayload = normalizePayload(cloudRawPayload, 0);
-    const winner = resolveNewest(localPayload, cloudPayload);
-
-    if (winner.source === "cloud" && winner.payload) {
-      applyPayloadToState(winner.payload, 0, true);
-      setSyncNotice("Cloud sync on");
-      cloudReadyRef.current = true;
+    const mergedResult = resolveMerged(localPayload, cloudPayload, { maxHabits: MAX_HABITS });
+    const mergedPayload = normalizePayload(mergedResult.payload, 0);
+    if (!mergedPayload) {
+      setSyncNotice("Sync failed, saved locally");
+      cloudReadyRef.current = false;
       return;
     }
 
-    if (winner.source === "local" && winner.payload) {
-      const pushError = await upsertCloudPayload(winner.payload);
+    const localSignature = localPayload ? getPayloadSignature(localPayload) : "";
+    const cloudSignature = cloudPayload ? getPayloadSignature(cloudPayload) : "";
+    const mergedSignature = getPayloadSignature(mergedPayload);
+
+    const needsLocalApply = mergedSignature !== localSignature;
+    const needsCloudPush = mergedSignature !== cloudSignature;
+
+    if (needsLocalApply) {
+      applyPayloadToState(mergedPayload, 0, !needsCloudPush);
+    } else if (!needsCloudPush) {
+      lastPushedUpdatedAtRef.current = mergedPayload.updatedAt;
+    }
+
+    if (needsCloudPush) {
+      const pushError = await upsertCloudPayload(mergedPayload);
       if (pushError) {
         setSyncNotice("Sync failed, saved locally");
         cloudReadyRef.current = false;
         return;
       }
-      lastPushedUpdatedAtRef.current = winner.payload.updatedAt;
-      setSyncNotice("Cloud sync on");
-      cloudReadyRef.current = true;
-      return;
+      lastPushedUpdatedAtRef.current = mergedPayload.updatedAt;
     }
 
+    setSyncNotice(needsLocalApply || needsCloudPush ? "Cloud sync merged updates" : "Cloud sync on");
     cloudReadyRef.current = true;
   }
 
